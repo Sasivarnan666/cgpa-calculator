@@ -1,38 +1,78 @@
 from gpa import calculate_gpa
 from cgpa import calculate_cgpa
-from data import sem1_subjects, sem2_subjects
+from data import ALL_SEMESTERS
+import json,os
+
+print("\n" + "="*40)
+print("🎓 CGPA CALCULATOR SYSTEM")
+print("="*40)
+
+
+def save_data(data):
+    with open("data.json", "w") as file:
+        json.dump(data, file, indent=4)
+
+def load_data():
+    if os.path.exists("data.json"):
+        with open("data.json", "r") as file:
+            return json.load(file)
+    return {}
 
 def main():
-    semester_data = {}
+    semester_data = load_data()
+
 
     while True:
         print("\n===== MENU =====")
-        print("1. Calculate Semester 1 GPA")
-        print("2. Calculate Semester 2 GPA")
-        print("3. Calculate CGPA")
-        print("4. Exit")
+        print("1. Calculate GPA")
+        print("2. Calculate CGPA")
+        print("3. Exit")
 
         choice = input("Enter your choice: ")
 
         if choice == "1":
-            gpa, credits = calculate_gpa(sem1_subjects)
-            semester_data[1] = {"gpa": gpa, "credits": credits}
+            try:
+                sem = int(input("Enter semester (1-8): "))
+                if sem not in ALL_SEMESTERS:
+                    print("Invalid semester!")
+                    continue
+            except ValueError:
+                print("Please enter a number!")
+                continue
+
+            if str(sem) in semester_data:
+                confirm = input("Already calculated. Recalculate? (y/n): ")
+                if confirm.lower() != 'y':
+                    continue
+
+            gpa, credits = calculate_gpa(sem)
+
+            if gpa is not None:
+                semester_data[str(sem)] = {
+                    "gpa": gpa,
+                    "credits": credits
+                }
+                save_data(semester_data)
+
+                print(f"Semester {sem} GPA: {gpa:.2f}")
 
         elif choice == "2":
-            gpa, credits = calculate_gpa(sem2_subjects)
-            semester_data[2] = {"gpa": gpa, "credits": credits}
+        
+            if not semester_data:
+                print("⚠️  No data available. Calculate GPA first.")
+            else:
+                print("\n📊 Stored Data:")
+                for sem, data in semester_data.items():
+                    print(f"Semester {sem} → GPA: {data['gpa']:.2f}")
+                
+                cgpa = calculate_cgpa(list(semester_data.values()))
+                print(f"CGPA: {cgpa:.2f}")
 
         elif choice == "3":
-            if not semester_data:
-                print("⚠️ No data available. Calculate GPA first.")
-            else:
-                cgpa = calculate_cgpa(list(semester_data.values()))
-                print(f"🏆 CGPA: {cgpa:.2f}")
-
-        elif choice == "4":
             print("Exiting...")
             break
 
+                  
         else:
             print("Invalid choice.")
 
